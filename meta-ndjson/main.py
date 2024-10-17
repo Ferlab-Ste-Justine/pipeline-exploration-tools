@@ -23,7 +23,7 @@ def main():
 	info_workflows = read_yaml(args.info_workflows)
 	ids_to_exclude = read_ids_to_exclude(args.id_to_exclude)
 	
-	
+
 	# Connect to S3
 	s3 = connect_s3()
 
@@ -39,67 +39,66 @@ def main():
 
 
 	# Construct metadata entries
-	metadata_entries = []
+	metadata_entries = {}
+	metadata_entries["submissionSchema"] =  info_workflows['submissionSchema']
+
+	
+	analysis = []
 	for family_id, sample_ids  in family_samples.items():
 		for sample_id, aliquot_id , relation_to_proband in sample_ids:
 			if sample_id in ids_to_exclude:
 				continue
-			
+
+			files = {}
 			# Vep annotaed only for proband
 			if ("proband") in relation_to_proband :
-				snv_file  =	find_files(file_data, sample_id, family_id, [r'vep.vcf.gz'])
-				snv_idx  =	find_files(file_data, sample_id, family_id, [r'vep.vcf.gz.tbi'])
-			else:
-				snv_file  =	None
-				snv_idx  =	None
-			
-			gvcf_file = find_files(file_data, sample_id, family_id, [r'.g.vcf.gz',r'.gvcf.gz'])
-			gvcf_idx = find_files(file_data, sample_id, family_id, [r'.g.vcf.gz.tbi',r'.gvcf.gz.tbi'])
-			cram_file = find_files(file_data, sample_id, family_id, [r'.cram'])
-			crai_file = find_files(file_data, sample_id, family_id, [r'.crai'])
-			fastq1 = find_files(file_data, sample_id, family_id, [r'R1.*\.fastq.gz'])
-			fastq2 = find_files(file_data, sample_id, family_id, [r'R2.*\.fastq.gz'])
-			cnv = find_files(file_data, sample_id, family_id, [r'.cnv.vcf.gz'])
-			cnv_idx = find_files(file_data, sample_id, family_id, [r'.cnv.vcf.gz.tbi'])
-			sv = find_files(file_data, sample_id, family_id, [r'.sv.vcf.gz'])
-			sv_idx = find_files(file_data, sample_id, family_id, [r'.sv.vcf.gz.idx'])
-			bam = find_files(file_data, sample_id, family_id, [r'.bam'])
-			bai = find_files(file_data, sample_id, family_id, [r'.bai'])
-			
+				snv_file = find_files(file_data, sample_id, family_id, info_workflows['analyses']['files']['snv'])
+				snv_idx = find_files(file_data, sample_id, family_id, info_workflows['analyses']['files']['snv_idx'])
+				if snv_file:
+					files["snv"] = snv_file
+				if snv_idx:
+					files["snv_idx"] = snv_idx
+
+			for file_type, patterns in info_workflows['analyses']['files'].items():
+				if file_type not in ["snv", "snv_idx"]:  # Skip snv and snv_idx as they are handled separately
+					found_files = find_files(file_data, sample_id, family_id, patterns)
+					if found_files:
+						files[file_type] = found_files
+
 
 			entry = {
 				"ldmSampleId": sample_id,
 				"labAliquotId": aliquot_id,
 				"familyID": family_id,
-				
-				"files": {
-					"snv"		: snv_file	if snv_file	 is not None else None,
-					"snv_idx"	: snv_idx	if snv_idx	 is not None else None,
-					"gvcf"		: gvcf_file if gvcf_file is not None else None,
-					"gvcf_idx"	: gvcf_idx if gvcf_idx is not None else None,
-					"cram"		: cram_file if cram_file is not None else None,
-					"crai"		: crai_file if crai_file is not None else None,
-					"bam"		: bam if bam is not None else None,
-					"bai"		: bai if bai is not None else None,
-					"fastq1"	: fastq1 if fastq1 is not None else None,
-					"fastq2"	: fastq2 if fastq2 is not None else None,
-					"cnv"		: cnv if cnv is not None else None,
-					"cnv_idx"	: cnv_idx if cnv_idx is not None else None,
-					"sv" 		: sv if sv is not None else None,
-					"sv_idx" 	: sv_idx if sv_idx is not None else None
-				},
+				"files": {key: value for key, value in files.items() if value is not None},
 				"dataset": info_workflows['analyses']['dataset'],
-				"specimenType" : info_workflows['analyses']['specimenType'],
-				"sampleType" : info_workflows['analyses']['sampleType']
+				"specimenType": info_workflows['analyses']['specimenType'],
+				"sampleType": info_workflows['analyses']['sampleType']
+				
 			}
-			metadata_entries.append(entry)
+			analysis.append(entry)
 
-	#Add fsample and files to metadata
-	info_workflows['analyses'] = metadata_entries
+
+	# Add analysis information if not null
+	if analysis:
+		metadata_entries["analysis"] = analysis
+
+	# Add experiment information if not null
+	experiment_info = {key: value for key, value in info_workflows['experiment'].items() if value is not None}
+	if experiment_info:
+		metadata_entries["experiment"] = experiment_info
+		
+
+	# Add workflow information if not null
+	workflow_info = {key: value for key, value in info_workflows['workflow'].items() if value is not None}
+	if workflow_info:
+		metadata_entries["workflow"] = workflow_info
+		
+		
 
 	# Write the metadata entries to metadata.json
-	with open(args.output_filename, 'w') as file:
-		json.dump(info_workflows, file, indent=4)
+	with open(args.output_filename, 'w') as output_file:
+		json.dump(metadata_entries, output_file, indent=4)
 
 if __name__ == "__main__":
 	main()

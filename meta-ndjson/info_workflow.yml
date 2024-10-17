@@ -1,0 +1,40 @@
+submissionSchema: null
+analyses:
+  ldmSampleId: null
+  labAliquotId: null
+  familyID: null
+  files:
+    snv:  ['vep.vcf.gz']
+    snv_idx: ['vep.vcf.gz.tbi']
+    gvcf: ['.g.vcf.gz','.gvcf.gz']
+    gvcf_idx: ['.g.vcf.gz.tbi','.gvcf.gz.tbi']
+    cram: ['.cram']
+    crai: ['.crai']
+    fastq1: ['R1.*\.fastq.gz']
+    fastq2: ['R2.*\.fastq.gz']
+    cnv: ['.cnv.vcf.gz']
+    cnv_idx: ['.cnv.vcf.gz.tbi']
+    sv: ['.sv.vcf.gz']
+    sv_idx: ['.sv.vcf.gz.idx']
+    bam: ['.bam']
+    bai: ['.bai']
+    extra: ['.tar.gz']
+  specimenType: null
+  sampleType: null
+  dataset: null
+experiment:
+  isPairedEnd: null
+  platform: null
+  experimentalStrategy: null
+  runName : null
+  runDate: null
+  runAlias: null
+  flowcellId: null
+  sequencerId: null
+  readLength: null
+  captureKit : null
+  baitDefinition: null
+workflow:
+  genomeBuild: null
+  name: null
+  version: null
