@@ -2,6 +2,7 @@ import csv
 import yaml
 from datetime import datetime
 import re
+import json
 
 def read_sample_family(file_path):
 	family_samples = {}
@@ -9,10 +10,10 @@ def read_sample_family(file_path):
 		reader = csv.reader(csvfile)
 		next(reader)  # Skip the header line
 		for row in reader:
-			sample_id, aliquot_id, family_id , relation_to_proband = row
+			sample_id, aliquot_id, family_id , relation_to_proband , dataset_id , studies_id , to_exclude = row
 			if family_id not in family_samples:
 				family_samples[family_id] = []
-			family_samples[family_id].append((sample_id, aliquot_id,relation_to_proband))
+			family_samples[family_id].append((sample_id, aliquot_id,relation_to_proband,dataset_id,studies_id,to_exclude))
 	return family_samples
 
 def read_yaml(file_path):

@@ -1,12 +1,11 @@
 import argparse
-from s3_utils import connect_s3, get_file_data_from_s3
-from file_utils import read_sample_family, read_yaml, read_ids_to_exclude, find_files
+from s3_utils import *
+from file_utils import *
 import json
 
 def parse_arguments():
 	parser = argparse.ArgumentParser(description='Process some files.')
 	parser.add_argument('--sample_family', type=str, required=True, help='Path to sample_family.csv')
-	parser.add_argument('--id_to_exclude', type=str, required=True, help='Path to ID_TO_EXCLUDE.tsv')
 	parser.add_argument('--s3_bucket_raw', type=str, required=True, help='S3 bucket name')
 	parser.add_argument('--s3_bucket_prod', type=str, required=True, help='S3 bucket name')
 	parser.add_argument('--studies_name', type=str, required=True, help='S3 prefix to list files')
@@ -21,9 +20,9 @@ def main():
 	
 	family_samples = read_sample_family(args.sample_family)
 	info_workflows = read_yaml(args.info_workflows)
-	ids_to_exclude = read_ids_to_exclude(args.id_to_exclude)
-	
 
+	
+			
 	# Connect to S3
 	s3 = connect_s3()
 
@@ -45,8 +44,8 @@ def main():
 	
 	analysis = []
 	for family_id, sample_ids  in family_samples.items():
-		for sample_id, aliquot_id , relation_to_proband in sample_ids:
-			if sample_id in ids_to_exclude:
+		for sample_id, aliquot_id , relation_to_proband , dataset_id , studies_id , to_exlude in sample_ids:
+			if to_exlude == True :
 				continue
 
 			files = {}
@@ -71,11 +70,13 @@ def main():
 				"labAliquotId": aliquot_id,
 				"familyID": family_id,
 				"files": {key: value for key, value in files.items() if value is not None},
-				"dataset": info_workflows['analyses']['dataset'],
 				"specimenType": info_workflows['analyses']['specimenType'],
 				"sampleType": info_workflows['analyses']['sampleType']
 				
 			}
+			if dataset_id:
+				entry["dataset"] = dataset_id
+
 			analysis.append(entry)
 
 
